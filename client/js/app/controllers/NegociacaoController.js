@@ -1,21 +1,21 @@
-class NegociacaoController{
-    constructor(){
-        
+class NegociacaoController {
+    constructor() {
+
         //variável com os valores do formulário
         let $ = document.querySelector.bind(document);
         this._inputData = $('#data');
         this._inputQuantidade = $('#quantidade');
         this._inputValor = $('#valor');
 
-        this._listaNegociacoes = new Bind (
+        this._listaNegociacoes = new Bind(
             new ListaNegociacoes(),
             new NegociacoesView($('#negociacoesView')),
             'adiciona', 'esvazia');
-        
-        this._mensagem = new Bind(new Mensagem(), new MensagemView($('#mensagemView')),'texto');
+
+        this._mensagem = new Bind(new Mensagem(), new MensagemView($('#mensagemView')), 'texto');
     }
 
-    adiciona(event){
+    adiciona(event) {
         //evita o recarregamento da página ao enviar o formulário
         event.preventDefault();
         this._listaNegociacoes.adiciona(this._criaNegociacao());
@@ -23,25 +23,29 @@ class NegociacaoController{
         this._limpaFormulario();
     }
 
-    importaNegociacoes(){
+    importaNegociacoes() {
         let service = new NegociacaoService();
-        service.obterNegociacoesDaSemana((erro, negociacoes)=>{
-            if(erro){
-                this._mensagem.texto = erro;
-                return
-            }
 
-            negociacoes.forEach(negociacoes => this._listaNegociacoes.adiciona(negociacoes));
-            this._mensagem.texto='Negociações importadas com sucesso!';
-       });
+        Promise.all([
+            service.obterNegociacoesDaSemana(),
+            service.obterNegociacoesDaSemanaAnterior(),
+            service.obterNegociacoesDaSemanaRetrasada()
+        ])
+            .then(negociacoes => {
+                negociacoes
+                    .reduce((arrayAchatado, array) => arrayAchatado.concat(array),[])
+                    .forEach(negociacao => this._listaNegociacoes.adiciona(negociacao));
+                this._mensagem.texto = 'Negociações importadas com sucesso!';
+            })
+            .catch(error => this._mensagem.texto = error);
     }
 
-    apaga(){
+    apaga() {
         this._listaNegociacoes.esvazia();
         this._mensagem.texto = "Negociações apagadas com sucesso!";
     }
 
-    _criaNegociacao(){
+    _criaNegociacao() {
         return new Negociacao(
             DateHelper.textoParaData(this._inputData.value),
             this._inputQuantidade.value,
@@ -49,7 +53,7 @@ class NegociacaoController{
         );
     }
 
-    _limpaFormulario(){
+    _limpaFormulario() {
         this._inputData.value = '';
         this._inputQuantidade.value = 1;
         this._inputValor.value = 0.0;
