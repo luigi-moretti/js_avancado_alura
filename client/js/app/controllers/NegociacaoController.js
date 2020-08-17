@@ -20,9 +20,13 @@ class NegociacaoController {
     adiciona(event) {
         //evita o recarregamento da página ao enviar o formulário
         event.preventDefault();
-        this._listaNegociacoes.adiciona(this._criaNegociacao());
-        this._mensagem.texto = 'Negociação adicionada com sucesso';
-        this._limpaFormulario();
+        try{
+            this._listaNegociacoes.adiciona(this._criaNegociacao());
+            this._mensagem.texto = 'Negociação adicionada com sucesso';
+            this._limpaFormulario();
+        } catch(erro){
+            this._mensagem.texto = erro;
+        }
     }
 
     importaNegociacoes() {
